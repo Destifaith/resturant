@@ -1,13 +1,11 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { ChevronLeft, Minus, Plus, ShoppingBag } from 'lucide-react';
-import { Card } from '@/components/ui/card';
+import { useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { ChevronLeft, ShoppingBag, Minus, Plus } from "lucide-react";
+import BottomNav from "@/components/BottomNav";
 
-// Type definitions
 interface Customization {
   id: string;
   label: string;
@@ -20,181 +18,166 @@ interface MenuItem {
   price: number;
   img: string;
   desc: string;
-  details: string;
   customizations: Customization[];
 }
 
-// Sample item data - in a real app, this would come from a database or API
 const ITEMS: Record<string, MenuItem> = {
-  '1': {
-    id: '1',
-    name: 'Jollof Rice & Chicken',
+  "1": {
+    id: "1",
+    name: "Jollof Rice & Chicken",
     price: 45,
-    img: 'https://images.unsplash.com/photo-1604382354936-07c5d9983bd3',
-    desc: 'Fluffy red rice cooked in tomato sauce with perfectly seasoned chicken. A Ghanaian favorite served with plantain.',
-    details: 'A traditional West African dish featuring aromatic jollof rice, slow-cooked with tomatoes, onions, and spices, paired with tender grilled chicken.',
+    img: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3",
+    desc: "Fluffy red rice cooked in tomato sauce with perfectly seasoned grilled chicken. A Ghanaian favorite served with plantain.",
     customizations: [
-      { id: 'spicy', label: 'Make it Spicy?', default: false },
-      { id: 'plantain', label: 'Add Plantain?', default: true }
-    ]
+      { id: "spicy",    label: "Spicy?",        default: false },
+      { id: "plantain", label: "Add Plantain?",  default: false },
+    ],
   },
-  '2': {
-    id: '2',
-    name: 'Waakye Special',
-    price: 35,
-    img: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd',
-    desc: 'Savory rice and beans combo with stewed meat and fresh vegetables.',
-    details: 'An authentic Ghanaian breakfast and lunch favorite. Waakye is a delicious combination of millet, rice, and red beans cooked together.',
+  "2": {
+    id: "2",
+    name: "Fufu & Light Soup",
+    price: 55,
+    img: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd",
+    desc: "Authentic pounded fufu with a rich goat meat light soup. A true Ghanaian classic.",
     customizations: [
-      { id: 'spicy', label: 'Make it Spicy?', default: false },
-      { id: 'extra-meat', label: 'Add Extra Meat?', default: false }
-    ]
-  }
+      { id: "spicy",      label: "Spicy?",            default: false },
+      { id: "extra-meat", label: "Add Extra Meat?",    default: false },
+    ],
+  },
+  "3": {
+    id: "3",
+    name: "Beef Burger",
+    price: 85,
+    img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd",
+    desc: "Double patty beef burger with caramelized onions, fresh lettuce and golden fries.",
+    customizations: [
+      { id: "extra-cheese", label: "Add Extra Cheese?", default: false },
+      { id: "no-onions",    label: "No Onions?",         default: false },
+    ],
+  },
+  "4": {
+    id: "4",
+    name: "Stir Fry Noodles",
+    price: 70,
+    img: "https://images.unsplash.com/photo-1585032226651-759b368d7246",
+    desc: "Veggie packed stir fry noodles with a rich soy glaze and sesame seeds.",
+    customizations: [
+      { id: "spicy",  label: "Spicy?",          default: false },
+      { id: "prawns", label: "Add Prawns?",      default: false },
+    ],
+  },
 };
 
 export default function ItemPage({ params }: { params: { id: string } }) {
-  const item = ITEMS[params.id] || ITEMS['1'];
+  const item = ITEMS[params.id] ?? ITEMS["1"];
+
   const [quantity, setQuantity] = useState(1);
-  const [customizations, setCustomizations] = useState<Record<string, boolean>>(
-    item.customizations.reduce((acc: Record<string, boolean>, c: Customization) => {
-      acc[c.id] = c.default;
-      return acc;
-    }, {})
+  const [toggles, setToggles]   = useState<Record<string, boolean>>(
+    Object.fromEntries(item.customizations.map((c) => [c.id, c.default]))
   );
 
-  const handleCustomizationChange = (id: string) => {
-    setCustomizations(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
-  };
+  const toggle = (id: string) =>
+    setToggles((prev) => ({ ...prev, [id]: !prev[id] }));
 
-  const incrementQuantity = () => setQuantity(q => q + 1);
-  const decrementQuantity = () => setQuantity(q => (q > 1 ? q - 1 : 1));
-
-  const totalPrice = item.price * quantity;
+  const total = item.price * quantity;
 
   return (
-    <main className="flex min-h-screen flex-col bg-background pb-28 md:pb-24">
-      {/* Header */}
-      <header className="flex items-center gap-3 px-5 md:px-8 py-4 sticky top-0 bg-background/95 backdrop-blur z-20 border-b border-border">
-        <Link href="/menu">
-          <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 hover:bg-muted">
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-        </Link>
-        <h1 className="text-xl md:text-2xl font-bold text-foreground">Item Details</h1>
-      </header>
+    <main className="flex min-h-screen flex-col bg-[#f5f0eb]">
 
-      {/* Content */}
-      <div className="flex-1 px-5 md:px-8 py-8">
-        <div className="max-w-2xl mx-auto space-y-8">
-          
-          {/* Product Image */}
-          <div className="relative w-full aspect-square rounded-3xl overflow-hidden shadow-lg bg-muted">
-            <Image
-              src={item.img}
-              fill
-              className="object-cover"
-              alt={item.name}
-              sizes="(max-width: 768px) 100vw, 600px"
-              priority
-            />
-          </div>
+      {/* ── FOOD IMAGE (full width) ── */}
+      <div className="relative w-full h-72 bg-gray-200">
+        <Image
+          src={item.img}
+          fill
+          className="object-cover"
+          alt={item.name}
+          sizes="100vw"
+          priority
+        />
+        {/* Gradient overlay for header icons */}
+        <div className="absolute inset-0 bg-linear-to-b from-black/40 to-transparent" />
 
-          {/* Product Info */}
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground">{item.name}</h2>
-              <p className="text-2xl md:text-3xl font-bold text-primary mt-2">GHS {item.price}.00</p>
+        {/* Back + Cart icons on top of image */}
+        <div className="absolute top-12 left-5 right-5 flex items-center justify-between">
+          <Link href="/menu">
+            <div className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <ChevronLeft className="h-5 w-5 text-white" />
             </div>
-            
-            <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-              {item.details}
-            </p>
-          </div>
-
-          {/* Customizations */}
-          <div className="space-y-4">
-            <h3 className="text-lg md:text-xl font-bold text-foreground">Customizations</h3>
-            <div className="space-y-3">
-              {item.customizations.map((customization: Customization) => (
-                <Card key={customization.id} className="p-4 border border-border hover:border-primary/30 cursor-pointer transition-colors">
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={customizations[customization.id]}
-                      onChange={() => handleCustomizationChange(customization.id)}
-                      className="w-5 h-5 rounded cursor-pointer accent-primary"
-                    />
-                    <span className="text-base md:text-lg font-medium text-foreground flex-1">
-                      {customization.label}
-                    </span>
-                  </label>
-                </Card>
-              ))}
+          </Link>
+          <Link href="/cart">
+            <div className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <ShoppingBag className="h-5 w-5 text-white" />
             </div>
-          </div>
-
-          {/* Quantity Selector */}
-          <div className="space-y-4">
-            <h3 className="text-lg md:text-xl font-bold text-foreground">Quantity</h3>
-            <div className="flex items-center gap-4">
-              <Button
-                onClick={decrementQuantity}
-                variant="outline"
-                size="icon"
-                className="h-12 w-12 md:h-14 md:w-14 rounded-full border-2 border-muted hover:border-primary text-foreground hover:text-primary transition-colors"
-              >
-                <Minus className="h-5 w-5 md:h-6 md:w-6" />
-              </Button>
-              
-              <div className="flex-1 text-center">
-                <span className="text-3xl md:text-4xl font-bold text-foreground">
-                  {quantity}
-                </span>
-              </div>
-              
-              <Button
-                onClick={incrementQuantity}
-                className="h-12 w-12 md:h-14 md:w-14 rounded-full bg-primary text-white hover:bg-primary/90 transition-all shadow-md"
-                size="icon"
-              >
-                <Plus className="h-5 w-5 md:h-6 md:w-6" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Price Summary */}
-          <Card className="p-5 md:p-6 bg-muted border-none space-y-3">
-            <div className="flex justify-between items-center text-base">
-              <span className="text-muted-foreground">Subtotal</span>
-              <span className="font-bold text-foreground">GHS {item.price}.00</span>
-            </div>
-            <div className="flex justify-between items-center text-base">
-              <span className="text-muted-foreground">Quantity</span>
-              <span className="font-bold text-foreground">x {quantity}</span>
-            </div>
-            <div className="border-t border-border pt-3">
-              <div className="flex justify-between items-center text-xl md:text-2xl">
-                <span className="font-bold text-foreground">Total</span>
-                <span className="font-bold text-primary">GHS {totalPrice}.00</span>
-              </div>
-            </div>
-          </Card>
+          </Link>
         </div>
       </div>
 
-      {/* Add to Cart Button */}
-      <div className="fixed bottom-5 left-5 right-5 md:bottom-6 md:left-6 md:right-6 z-30 max-w-2xl md:max-w-2xl mx-auto">
+      {/* ── CONTENT CARD (slides up over image) ── */}
+      <div className="flex-1 bg-[#f5f0eb] -mt-5 rounded-t-3xl px-5 pt-6 pb-32 relative z-10">
+
+        {/* Name + Price */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-extrabold text-gray-900 leading-tight">{item.name}</h1>
+          <p className="text-[#1E3A2F] font-bold text-xl mt-1">GHS {item.price}.00</p>
+          <p className="text-gray-400 text-sm mt-2 leading-relaxed">{item.desc}</p>
+        </div>
+
+        {/* ── CUSTOMISATIONS (Toggle Switches) ── */}
+        <div className="space-y-3 mb-8">
+          {item.customizations.map((c) => (
+            <div
+              key={c.id}
+              className="flex items-center justify-between bg-white rounded-2xl px-4 py-3.5 border border-black/4"
+            >
+              <span className="font-semibold text-gray-800 text-sm">{c.label}</span>
+              {/* Toggle switch */}
+              <button
+                onClick={() => toggle(c.id)}
+                className={`relative w-12 h-6 rounded-full transition-colors duration-200 ${
+                  toggles[c.id] ? "bg-[#1E3A2F]" : "bg-gray-200"
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${
+                    toggles[c.id] ? "translate-x-6" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {/* ── QUANTITY STEPPER ── */}
+        <div className="flex items-center justify-center gap-6 mb-8">
+          <button
+            onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+            className="w-10 h-10 rounded-full border-2 border-gray-200 flex items-center justify-center active:scale-90 transition-transform"
+          >
+            <Minus className="h-4 w-4 text-gray-600" />
+          </button>
+          <span className="text-3xl font-extrabold text-gray-900 w-8 text-center">{quantity}</span>
+          <button
+            onClick={() => setQuantity((q) => q + 1)}
+            className="w-10 h-10 rounded-full bg-[#1E3A2F] flex items-center justify-center active:scale-90 transition-transform shadow-md"
+          >
+            <Plus className="h-4 w-4 text-white" />
+          </button>
+        </div>
+      </div>
+
+      {/* ── ADD TO CART BUTTON ── */}
+      <div className="fixed bottom-5 left-5 right-5 z-30">
         <Link href="/cart">
-          <Button className="w-full h-13 md:h-14 rounded-full bg-primary text-white hover:bg-primary/90 text-base md:text-lg font-bold shadow-2xl flex items-center justify-center gap-3 transition-all active:scale-95 md:active:scale-100">
-            <ShoppingBag className="h-5 w-5 md:h-6 md:w-6" />
-            <span>Add to Cart</span>
-            <span className="ml-auto font-bold">GHS {totalPrice}.00</span>
-          </Button>
+          <div className="bg-[#E07B39] text-white rounded-full px-6 py-4 flex items-center justify-between shadow-2xl active:scale-95 transition-transform">
+            <div className="flex items-center gap-3">
+              <ShoppingBag className="h-5 w-5" />
+              <span className="font-bold text-base">ADD TO CART</span>
+            </div>
+            <span className="font-bold text-base">GHS {total}.00</span>
+          </div>
         </Link>
       </div>
+       <BottomNav />
     </main>
   );
 }
