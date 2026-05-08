@@ -33,21 +33,21 @@ export default function CartPage() {
   const total      = subtotal + tax + serviceFee;
 
   return (
-    <main className="flex min-h-screen flex-col bg-[#f5f0eb]">
+    <main className="flex min-h-screen flex-col bg-[#f5f0eb] pb-20">
 
       {/* ── HEADER ── */}
-      <header className="bg-[#1E3A2F] px-5 pt-12 pb-5 flex items-center justify-between">
+      <header className="bg-[#1E3A2F] px-4 pt-10 pb-4 flex items-center justify-between sticky top-0 z-20">
         <Link href="/menu">
-          <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center">
-            <ChevronLeft className="h-5 w-5 text-white" />
+          <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+            <ChevronLeft className="h-4 w-4 text-white" />
           </div>
         </Link>
-        <h1 className="text-xl font-bold text-white">Cart</h1>
-        <div className="w-9" />
+        <h1 className="text-lg font-bold text-white">Cart</h1>
+        <div className="w-8" />
       </header>
 
       {/* ── CART ITEMS ── */}
-      <div className="flex-1 px-5 py-5 space-y-3 pb-4">
+      <div className="flex-1 px-4 py-4 space-y-3">
         {cartItems.length === 0 ? (
           <div className="text-center py-20 text-gray-400">
             <p className="mb-4">Your cart is empty</p>
@@ -55,9 +55,9 @@ export default function CartPage() {
           </div>
         ) : (
           cartItems.map((item) => (
-            <div key={item.id} className="flex items-center gap-3 bg-white rounded-2xl p-3 border border-black/4">
-              <div className="relative h-16 w-16 rounded-xl overflow-hidden shrink-0 bg-gray-100">
-                <Image src={item.img} fill className="object-cover" alt={item.name} sizes="64px" />
+            <div key={item.id} className="flex items-center gap-3 bg-white rounded-xl p-2.5 border border-black/4">
+              <div className="relative h-14 w-14 rounded-lg overflow-hidden shrink-0 bg-gray-100">
+                <Image src={item.img} fill className="object-cover" alt={item.name} sizes="56px" />
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-bold text-gray-900 text-sm leading-tight line-clamp-1">{item.name}</h3>
@@ -84,37 +84,38 @@ export default function CartPage() {
         )}
       </div>
 
-      {/* ── PRICE SUMMARY ── */}
+      {/* ── PRICE SUMMARY & PROCEED BUTTON ── */}
       {cartItems.length > 0 && (
-        <div className="px-5 pb-32">
-          <div className="bg-white rounded-2xl p-4 border border-black/4 space-y-3">
+        <div className="px-4 pb-24">
+          <div className="bg-white rounded-xl p-4 border border-black/4 space-y-3 mb-4">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-400">Total</span>
+              <span className="text-gray-400">Subtotal</span>
               <span className="font-semibold text-gray-900">GHS {subtotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-400">Taxes ⓘ</span>
+              <span className="text-gray-400">Taxes (5%)</span>
               <span className="font-semibold text-gray-900">GHS {tax.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-sm border-t border-gray-100 pt-3">
-              <span className="text-gray-400">Service Fees ⓘ</span>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-400">Service Fee</span>
               <span className="font-semibold text-gray-900">GHS {serviceFee.toFixed(2)}</span>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── PROCEED TO ORDER BUTTON ── */}
-      {cartItems.length > 0 && (
-        <div className="fixed bottom-5 left-5 right-5 z-30">
-          <Link href="/order">
-            <div className="bg-[#E07B39] text-white rounded-full px-6 py-4 text-center font-bold text-base shadow-2xl active:scale-95 transition-transform">
-              PROCEED TO ORDER
+            <div className="flex justify-between text-base font-bold pt-3 border-t border-gray-100">
+              <span className="text-gray-900">Total</span>
+              <span className="text-[#1E3A2F]">GHS {total.toFixed(2)}</span>
             </div>
+          </div>
+
+          {/* Proceed to Order Button - Moved up */}
+          <Link href="/order">
+            <button className="w-full bg-[#E07B39] text-white rounded-full py-3.5 text-center font-bold text-sm shadow-lg active:scale-95 transition-transform">
+              PROCEED TO ORDER • GHS {total.toFixed(2)}
+            </button>
           </Link>
         </div>
       )}
-       <BottomNav />
+      
+      <BottomNav />
     </main>
   );
 }
