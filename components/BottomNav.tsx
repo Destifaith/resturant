@@ -67,7 +67,7 @@ function NavItem({
   return (
     <Link href={href} className="flex flex-col items-center gap-0.5 px-1.5 py-0.5">
       {icon}
-      <span className={`text-[8px] font-medium ${active ? "text-[#1E3A2F] font-semibold" : "text-gray-400"}`}>
+      <span className={`text-[8px] font-medium ${active ? "text-[#E25822] font-semibold" : "text-gray-400"}`}>
         {label}
       </span>
       {active && <span className="w-0.5 h-0.5 rounded-full bg-[#E07B39]" />}
