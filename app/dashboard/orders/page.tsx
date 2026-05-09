@@ -1,8 +1,8 @@
 "use client"
 
-// import { useState } from "react"
-import { useSearchParams } from "next/navigation"
+import { Suspense } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
+import { useSearchParams } from "next/navigation"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -29,7 +29,6 @@ import {
   EyeIcon,
   PrinterIcon,
 } from "lucide-react"
-import { ModeToggle } from "@/components/mode-toggle"
 
 // Mock data
 const mockOrders = [
@@ -93,9 +92,10 @@ const statusConfig = {
   cancelled: { label: "Cancelled", color: "bg-red-100 text-red-800", icon: XCircleIcon },
 }
 
-export default function OrdersPage() {
+// Component that uses useSearchParams - wrapped in Suspense
+function OrdersContent() {
   const searchParams = useSearchParams()
-  const statusFilter = searchParams.get("status") // "active", "completed", or "cancelled"
+  const statusFilter = searchParams.get("status")
 
   // Determine which orders to show based on URL param
   const getFilteredOrders = () => {
@@ -111,7 +111,6 @@ export default function OrdersPage() {
 
   const filteredOrders = getFilteredOrders()
 
-  // Get page title based on filter
   const getPageTitle = () => {
     if (statusFilter === "completed") return "Completed Orders"
     if (statusFilter === "cancelled") return "Cancelled Orders"
@@ -124,127 +123,147 @@ export default function OrdersPage() {
     return "Orders currently being prepared or ready for pickup"
   }
 
+  const getStatusCount = (type: string) => {
+    if (type === "active") {
+      return mockOrders.filter(order => ["waiting", "preparing", "ready"].includes(order.status)).length
+    }
+    if (type === "completed") {
+      return mockOrders.filter(order => order.status === "completed").length
+    }
+    if (type === "cancelled") {
+      return mockOrders.filter(order => order.status === "cancelled").length
+    }
+    return 0
+  }
+
+  return (
+    <>
+      {/* Status Summary Cards - Clickable to navigate */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <a href="/dashboard/orders?status=active" className="block">
+          <Card className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === "active" || !statusFilter ? "ring-2 ring-primary" : ""}`}>
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold">{getStatusCount("active")}</div>
+              <p className="text-sm text-muted-foreground">Active Orders</p>
+              <p className="text-xs text-muted-foreground mt-1">Waiting • Preparing • Ready</p>
+            </CardContent>
+          </Card>
+        </a>
+
+        <a href="/dashboard/orders?status=completed" className="block">
+          <Card className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === "completed" ? "ring-2 ring-primary" : ""}`}>
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold">{getStatusCount("completed")}</div>
+              <p className="text-sm text-muted-foreground">Completed</p>
+              <p className="text-xs text-muted-foreground mt-1">Finished orders</p>
+            </CardContent>
+          </Card>
+        </a>
+
+        <a href="/dashboard/orders?status=cancelled" className="block">
+          <Card className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === "cancelled" ? "ring-2 ring-primary" : ""}`}>
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold">{getStatusCount("cancelled")}</div>
+              <p className="text-sm text-muted-foreground">Cancelled</p>
+              <p className="text-xs text-muted-foreground mt-1">Cancelled orders</p>
+            </CardContent>
+          </Card>
+        </a>
+      </div>
+
+      {/* Orders List - Changes based on URL param */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{getPageTitle()}</CardTitle>
+          <p className="text-sm text-muted-foreground">{getPageDescription()}</p>
+        </CardHeader>
+        <CardContent>
+          {filteredOrders.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No {getPageTitle().toLowerCase()} found
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredOrders.map((order) => {
+                const StatusIcon = statusConfig[order.status as keyof typeof statusConfig].icon
+                return (
+                  <div
+                    key={order.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="font-semibold text-lg">Order #{order.id}</h3>
+                        <Badge className={statusConfig[order.status as keyof typeof statusConfig].color}>
+                          <StatusIcon className="h-3 w-3 mr-1" />
+                          {statusConfig[order.status as keyof typeof statusConfig].label}
+                        </Badge>
+                        <Badge variant="outline">{order.table}</Badge>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        <p>Customer: {order.customerName}</p>
+                        <p>Items: {order.items.map(i => `${i.quantity}x ${i.name}`).join(", ")}</p>
+                      </div>
+                    </div>
+                    <div className="text-right space-y-2">
+                      <p className="font-bold text-lg">GHS {order.total.toFixed(2)}</p>
+                      <p className="text-xs text-muted-foreground">{order.paymentMethod}</p>
+                      <p className="text-xs text-muted-foreground">{order.time}</p>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline">
+                          <EyeIcon className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="outline">
+                          <PrinterIcon className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </>
+  )
+}
+
+// Main page component with Suspense boundary
+export default function OrdersPage() {
   return (
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-<header className="flex h-16 shrink-0 items-center justify-between gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-  <div className="flex items-center gap-2 px-4">
-    <SidebarTrigger className="-ml-1" />
-    <Separator
-      orientation="vertical"
-      className="mr-2 h-4 self-auto"
-    />
-    <Breadcrumb>
-      <BreadcrumbList>
-        <BreadcrumbItem className="hidden md:block">
-          <BreadcrumbLink href="/admin">Dashboard</BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator className="hidden md:block" />
-        <BreadcrumbItem>
-          <BreadcrumbPage>Orders</BreadcrumbPage>
-        </BreadcrumbItem>
-      </BreadcrumbList>
-    </Breadcrumb>
-  </div>
-  <div className="px-4 flex items-center gap-2">
-    <ModeToggle />
-  </div>
-</header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          {/* Status Summary Cards - Clickable to navigate */}
-          <div className="grid gap-4 md:grid-cols-3">
-            <a href="/dashboard/orders?status=active" className="block">
-              <Card className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === "active" || !statusFilter ? "ring-2 ring-primary" : ""}`}>
-                <CardContent className="p-4">
-                  <div className="text-2xl font-bold">
-                    {mockOrders.filter(o => ["waiting", "preparing", "ready"].includes(o.status)).length}
-                  </div>
-                  <p className="text-sm text-muted-foreground">Active Orders</p>
-                  <p className="text-xs text-muted-foreground mt-1">Waiting • Preparing • Ready</p>
-                </CardContent>
-              </Card>
-            </a>
-
-            <a href="/dashboard/orders?status=completed" className="block">
-              <Card className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === "completed" ? "ring-2 ring-primary" : ""}`}>
-                <CardContent className="p-4">
-                  <div className="text-2xl font-bold">
-                    {mockOrders.filter(o => o.status === "completed").length}
-                  </div>
-                  <p className="text-sm text-muted-foreground">Completed</p>
-                  <p className="text-xs text-muted-foreground mt-1">Finished orders</p>
-                </CardContent>
-              </Card>
-            </a>
-
-            <a href="/dashboard/orders?status=cancelled" className="block">
-              <Card className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === "cancelled" ? "ring-2 ring-primary" : ""}`}>
-                <CardContent className="p-4">
-                  <div className="text-2xl font-bold">
-                    {mockOrders.filter(o => o.status === "cancelled").length}
-                  </div>
-                  <p className="text-sm text-muted-foreground">Cancelled</p>
-                  <p className="text-xs text-muted-foreground mt-1">Cancelled orders</p>
-                </CardContent>
-              </Card>
-            </a>
+        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear">
+          <div className="flex items-center gap-2 px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4 self-auto" />
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>Orders</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
           </div>
+        </header>
 
-          {/* Orders List - Changes based on URL param */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{getPageTitle()}</CardTitle>
-              <p className="text-sm text-muted-foreground">{getPageDescription()}</p>
-            </CardHeader>
-            <CardContent>
-              {filteredOrders.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  No {getPageTitle().toLowerCase()} found
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {filteredOrders.map((order) => {
-                    const StatusIcon = statusConfig[order.status as keyof typeof statusConfig].icon
-                    return (
-                      <div
-                        key={order.id}
-                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="font-semibold text-lg">Order #{order.id}</h3>
-                            <Badge className={statusConfig[order.status as keyof typeof statusConfig].color}>
-                              <StatusIcon className="h-3 w-3 mr-1" />
-                              {statusConfig[order.status as keyof typeof statusConfig].label}
-                            </Badge>
-                            <Badge variant="outline">{order.table}</Badge>
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            <p>Customer: {order.customerName}</p>
-                            <p>Items: {order.items.map(i => `${i.quantity}x ${i.name}`).join(", ")}</p>
-                          </div>
-                        </div>
-                        <div className="text-right space-y-2">
-                          <p className="font-bold text-lg">GHS {order.total.toFixed(2)}</p>
-                          <p className="text-xs text-muted-foreground">{order.paymentMethod}</p>
-                          <p className="text-xs text-muted-foreground">{order.time}</p>
-                          <div className="flex gap-2">
-                            <Button size="sm" variant="outline">
-                              <EyeIcon className="h-4 w-4" />
-                            </Button>
-                            <Button size="sm" variant="outline">
-                              <PrinterIcon className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+          <Suspense fallback={
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading orders...</p>
+              </div>
+            </div>
+          }>
+            <OrdersContent />
+          </Suspense>
         </div>
       </SidebarInset>
     </SidebarProvider>
